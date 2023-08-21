@@ -1,6 +1,109 @@
 %% Probabilistic & Statistical Modelling (II) Final Project
 % Done by: Ayesha Ejaz
 % Topic: Multi-model, Multivariate Analysis of Tactile Mental Imagery in Primary Somatosensory Cortex
+%% Testing for Multivariate Normality
+
+% (1) Defining directories or lists of beta file paths for each condition
+condition1Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition1';
+condition2Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition2';
+condition3Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition3';
+roiMaskDir = 'C:\Users\Medion\Downloads\Decoding_project\ROI_file';
+
+% (2) Listing all NIfTI files in the directories for each condition
+condition1Files = dir(fullfile(condition1Dir, '*.nii'));
+condition2Files = dir(fullfile(condition2Dir, '*.nii'));
+condition3Files = dir(fullfile(condition3Dir, '*.nii'));
+numROIs = 5;
+
+% (3) Initializing cell arrays to store beta values for each condition and ROI
+allBetaValuesCondition1 = cell(1, numROIs);
+allBetaValuesCondition2 = cell(1, numROIs);
+allBetaValuesCondition3 = cell(1, numROIs);
+
+% (4) Looping through NIfTI files for Condition 1
+for fileIdx = 1:numel(condition1Files)
+    % (5) Getting the filename
+    filename = condition1Files(fileIdx).name;
+    
+    % (6) Checking if the filename indicates it's a beta map
+    if startsWith(filename, 'beta')
+        niftiFile = fullfile(condition1Dir, filename);
+        nifti = spm_vol(niftiFile);
+        niftiData = spm_read_vols(nifti);
+        
+        % (7) Looping through each ROI
+        for roiIdx = 1: numROIs
+            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
+            roiMask = spm_vol(roiMaskFile);
+            roiMaskData = spm_read_vols(roiMask);
+            
+            % (8) Extracting beta values from the ROI
+            betaValues = niftiData(roiMaskData > 0);
+            
+            % (9) Storing the beta values in the cell array for Condition 1
+            allBetaValuesCondition1{1, roiIdx} = [allBetaValuesCondition1{1, roiIdx}; betaValues];
+        end
+    end
+end
+
+% Repeating the same process for Condition 2 and Condition 3
+for fileIdx = 1:numel(condition2Files)
+    % (1) Getting the filename
+    filename = condition2Files(fileIdx).name;
+    
+    % (2) Checking if the filename indicates it's a beta map
+    if startsWith(filename, 'beta')
+        niftiFile = fullfile(condition2Dir, filename);
+        nifti = spm_vol(niftiFile);
+        niftiData = spm_read_vols(nifti);
+        
+        % (3) Looping through each ROI
+        for roiIdx = 1: numROIs
+            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
+            roiMask = spm_vol(roiMaskFile);
+            roiMaskData = spm_read_vols(roiMask);
+            
+            % (4) Extracting beta values from the ROI
+            betaValues = niftiData(roiMaskData > 0);
+            
+            % (5) Storing the beta values in the cell array for Condition 1
+            allBetaValuesCondition2{1, roiIdx} = [allBetaValuesCondition2{1, roiIdx}; betaValues];
+        end
+    end
+end
+
+% For condition 3
+for fileIdx = 1:numel(condition3Files)
+    % (1) Getting the filename
+    filename = condition3Files(fileIdx).name;
+    
+    % (2) Checking if the filename indicates it's a beta map
+    if startsWith(filename, 'beta')
+        niftiFile = fullfile(condition3Dir, filename);
+        nifti = spm_vol(niftiFile);
+        niftiData = spm_read_vols(nifti);
+        
+        % (3) Looping through each ROI
+        for roiIdx = 1: numROIs
+            % (4) Loading the ROI mask
+            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
+            roiMask = spm_vol(roiMaskFile);
+            roiMaskData = spm_read_vols(roiMask);
+            
+            % (5) Extracting beta values from the ROI
+            betaValues = niftiData(roiMaskData > 0);
+            
+            % (6) Storing the beta values in the cell array for Condition 1
+            allBetaValuesCondition3{1, roiIdx} = [allBetaValuesCondition3{1, roiIdx}; betaValues];
+        end
+    end
+end
+
+% Vertically concatenating all the ROIs with each column corresponding to
+% one of the conditions
+allBetaValues = [allBetaValuesCondition1{1,1} allBetaValuesCondition2{1,1} allBetaValuesCondition3{1,1}; allBetaValuesCondition1{1,2} allBetaValuesCondition2{1,2} allBetaValuesCondition3{1,2}; allBetaValuesCondition1{1,3} allBetaValuesCondition2{1,3} allBetaValuesCondition3{1,3};allBetaValuesCondition1{1,4} allBetaValuesCondition2{1,4} allBetaValuesCondition3{1,4}; allBetaValuesCondition1{1,5} allBetaValuesCondition2{1,5} allBetaValuesCondition3{1,5}];
+% Performing Henze Zirkler test
+HZmvntest(allBetaValues)
 
 %% The Decoding Toolbox (TDT) was used for performing LDA. 
 
@@ -9,13 +112,13 @@
 clearvars;
 clc;
 data_dir = 'C:\Users\Medion\Downloads\Decoding_project';
-addpath(data_dir) % Adding path to all subject folders
-addpath('C:\Users\Medion\Downloads\tdt_3.999E2\decoding_toolbox') % Adding path to tdt toolbox
-assert(~isempty(which('decoding_defaults.m', 'function')), 'TDT not found in path, please add')
-addpath('C:\spm12\spm12') % Adding path to SPM 12
-assert((~isempty(which('spm.m', 'function')) || ~isempty(which('BrikInfo.m', 'function'))) , 'Neither SPM nor AFNI found in path, please add (or remove this assert if you really dont need to read brain images)')
+addpath(data_dir); % Adding path to all subject folders
+addpath('C:\Users\Medion\Downloads\tdt_3.999E2\decoding_toolbox'); % Adding path to tdt toolbox
+assert(~isempty(which('decoding_defaults.m', 'function')), 'TDT not found in path, please add');
+addpath('C:\spm12\spm12'); % Adding path to SPM 12
+assert((~isempty(which('spm.m', 'function')) || ~isempty(which('BrikInfo.m', 'function'))) , 'Neither SPM nor AFNI found in path, please add (or remove this assert if you really dont need to read brain images)');
 
-clear cfg
+clear cfg;
 
 for subj = 1:10 % Iterating over all subjects
 
@@ -25,7 +128,7 @@ cfg.analysis = 'ROI'; % Defining the analysis method
 cfg.searchlight.radius = 3; % The unit by default is voxels
   
 cfg.results.dir = sprintf('Decoding_project/results_ImagPress_vs_ImagVibro/sub-%03d', subj); % Defining where results would be saved
-cfg.results.overwrite = 1 % In case you're running the analysis again and don't want the previous results, otherwise set to 0.
+cfg.results.overwrite = 1; % In case you're running the analysis again and don't want the previous results, otherwise set to 0.
 
 %% Second, getting the file names, labels and run number of each brain image
 %% file to use for decoding.
@@ -39,7 +142,7 @@ labelname1 = 'ImagPress'; % Specifying the label names that were given to the re
 labelname2 = 'ImagVibro';
 
 
-cfg.files.mask = {'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_1_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_2_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_3b_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rSII_TR50_left_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rSII_TR50_right_CUT_Stim_vs_Null.nii'}
+cfg.files.mask = {'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_1_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_2_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rPSC_3b_TR50_right_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rSII_TR50_left_CUT_Stim_vs_Null.nii', 'C:\Users\Medion\Downloads\Decoding_project\rois\rSII_TR50_right_CUT_Stim_vs_Null.nii'};
 % Multiple ROI masks from regions BA1, BA2, BA3b, ipsilateral S2 and contralateral S2 to define which voxels to use in the analysis
 
 regressor_names = design_from_spm(beta_loc); % Extracting all beta names and corresponding run numbers from the SPM.mat file
@@ -61,9 +164,9 @@ cfg.verbose = 1; % How much output you want to see on the screen while the progr
 
 cfg.decoding.method = 'classification'; % This is our default anyway.
 
-cfg.decoding.train.classification.model_parameters.shrinkage = 'lw2'; % Specific for lda in TDT
+cfg.decoding.train.classification.model_parameters.shrinkage = 'lw2'; % Sets the regularization method to 'lw2,' which likely refers to L2 (ridge) regularization. Regularization methods like L2 regularization add a penalty term to the loss function during training to prevent overfitting by discouraging overly complex models. In the context of linear classification or regression, L2 regularization adds a term that penalizes large coefficients, encouraging the model to use smaller weights for features. This helps improve the model's generalization performance on unseen data.
 
-cfg.results.output = {'accuracy_minus_chance'};
+cfg.results.output = {'accuracy_minus_chance'}; % Chance value is 50
 
 cfg.decoding.software = 'lda'; 
 
@@ -126,29 +229,29 @@ ImagPress_vs_ImagFlutt_highest_mode= mode(ImagPress_vs_ImagFlutt_highest);
 ImagPress_vs_ImagVibro_highest_mode = mode(ImagPress_vs_ImagVibro_highest);
 ImagFlutt_vs_ImagVibro_highest_mode = mode(ImagFlutt_vs_ImagVibro_highest);
 
-% Performing ttest for each ROI and each classifier
+% Performing ttest for each ROI and each classifier:
 Group1 = Group_Results_ImagPress_vs_ImagFlutt;
 Group2 = Group_Results_ImagPress_vs_ImagVibro; 
 Group3 = Group_Results_ImagFlutt_vs_ImagVibro; 
 
-% Initializing a cell array to store results structures for each group
+% (1) Initializing a cell array to store results structures for each group
 allGroupsROI = cell(3, 1);
 
-% Performing one-sample t-test for each ROI and each group
+% (2) Performing one-sample t-test for each ROI and each group
 for groupIndex = 1:3
     Group = eval(['Group', num2str(groupIndex)]); % Getting the current data matrix
     
-    % Initializing a results structure for the current matrix
+    % (3) Initializing a results structure for the current matrix
     Group_results = struct();
     
-    % Performing one-sample t-test for each ROI (each row of the matrix)
+    % (4) Performing one-sample t-test for each ROI (each row of the matrix)
     for roiIndex = 1:size(Group, 1)
         roiData = Group(roiIndex, :);
         
-        % Performing one-sample t-test comparing ROI data to zero (chance)
+        % (5) Performing one-sample t-test comparing ROI data to zero (chance)
         [h, p, ci, stats] = ttest(roiData);
         
-        % Storing results in the structure
+        % (6) Storing results in the structure
         Group_results(roiIndex).roiData = roiData;
         Group_results(roiIndex).t_statistic = stats.tstat;
         Group_results(roiIndex).df = numel(roiData) - 1; 
@@ -157,24 +260,25 @@ for groupIndex = 1:3
         Group_results(roiIndex).h = h; % True if above chance, False if not
     end
     
-    % Storing the results structure in the cell array
+    % (7) Storing the results structure in the cell array
     allGroupsROI{groupIndex} = Group_results;
 end
 
-% Defining category colors
+% Drawing the figure for allGroupsROI
+% (1) Defining category colors
 categoryColors = {"#A2142F", "#77AC30", "#0072BD"};  % Adjust colors as needed
 
-% Creating a figure with three subplots
+% (2) Creating a figure with three subplots
 figure;
 
 for groupIndex = 1:3
-    % Getting the results for the current matrix
+    % (3) Getting the results for the current matrix
     Group_results = allGroupsROI{groupIndex};
     
-    % Creating a subplot for the current matrix
+    % (4) Creating a subplot for the current matrix
     subplot(1, 3, groupIndex); % 1 row, 3 columns, current subplot
     
-    % Ploting the pvalues with category-specific colors
+    % (5) Ploting the pvalues with category-specific colors
     p_value = [Group_results.p_value];
     bar(p_value, 'FaceColor', categoryColors{groupIndex});
     xlabel('ROI Index');
@@ -219,18 +323,18 @@ disp("T-test statistics (stats):");
 disp(stats);
 
 % ttest for each roi across all subjects for a group of two classifiers
-% Define the data matrices for the comparisons
+% (1) Defining the data matrices for the comparisons
 dataMatrix1 = Group_Results_ImagPress_vs_ImagFlutt;
 dataMatrix2 = Group_Results_ImagPress_vs_ImagVibro;
 dataMatrix3 = Group_Results_ImagFlutt_vs_ImagVibro;
 
-% Creating a cell array to hold data matrices for the comparisons
+% (2) Creating a cell array to hold data matrices for the comparisons
 dataMatrices = {dataMatrix1, dataMatrix2, dataMatrix3};
 
-% Initializing a results structure
+% (3) Initializing a results structure
 results2 = struct();
 
-% Performing t-test for each row separately and each pairwise comparison
+% (4) Performing t-test for each row separately and each pairwise comparison
 numComparisons = length(dataMatrices);
 numRows = size(dataMatrix1, 1); % Assuming all data matrices have the same number of rows
 
@@ -244,16 +348,16 @@ for comparisonIndex1 = 1:numComparisons
             value1 = dataMatrix1(rowIndex, :);
             value2 = dataMatrix2(rowIndex,:);
             
-            % Performing t-test
+            % (5) Performing t-test
             [h, p, ci, stats] = ttest2(value1, value2);
             t_statistic = stats.tstat;
             
-            % Calculating Cohen's d
+            % (6) Calculating Cohen's d
             n1 = sum(~isnan(value1)); % Sample size for group 1
             n2 = sum(~isnan(value2)); % Sample size for group 2
             d = t_statistic / sqrt((n1 + n2) / 2); % Assuming equal sample sizes
             
-            % Storing results in the structure
+            % (7) Storing results in the structure
             results2(end+1).comparisonIndex1 = comparisonIndex1;
             results2(end).comparisonIndex2 = comparisonIndex2;
             results2(end).rowIndex = rowIndex;
@@ -268,60 +372,62 @@ for comparisonIndex1 = 1:numComparisons
     end
 end
 
-% The first row is empty for some reason, so just removing that
+% (8) The first row is empty for some reason, so just removing that
 results2(1) = [];
 
-%Bonferroni Correction
+% Bonferroni Correction
+% (1) Getting the p-values
 pValues = [results2.p]
 numComparisons = numel(pValues);
 
-% Desired family-wise error rate (usually 0.05)
+% (2) Desired family-wise error rate (usually 0.05)
 desiredFWER = 0.05;
 
-% Calculating adjusted alpha (Bonferroni-adjusted significance level)
+% (3) Calculating adjusted alpha (Bonferroni-adjusted significance level)
 adjustedAlpha = desiredFWER / numComparisons;
 
-% Determining which tests are significant after Bonferroni correction
+% (4) Determining which tests are significant after Bonferroni correction
 significantTests = pValues < adjustedAlpha;
 
-% Extracting cohen_d values from the results2 struct
+% Creating a figure from the results(2) struct
+% (1) Extracting cohen_d values from the results2 struct
 cohen_d = [results2.cohen_d];
 
-% Creating an error barplot
+% (2) Creating an error barplot
 
 categories = {'1 v 2', '1 v 2', '1 v 2', '1 v 2', '1 v 2', ...
               '1 v 3', '1 v 3', '1 v 3', '1 v 3', '1 v 3', ...
               '2 v 3', '2 v 3', '2 v 3', '2 v 3', '2 v 3'};
 
-% Definining unique categories
+% (3) Definining unique categories
 uniqueCategories = unique(categories);
 numCategories = numel(uniqueCategories);
 
-% Definining colors for each category
+% (4) Definining colors for each category
 categoryColors = {"#A2142F", "#77AC30", "#0072BD"};  % Adjust colors as needed
 
-% Creating a bar graph with different colors for each category
+% (5) Creating a bar graph with different colors for each category
 figure;
 hold on;
 
-% Looping through unique categories and setting the color for each category
+% (6) Looping through unique categories and setting the color for each category
 for i = 1:numel(uniqueCategories)
     categoryData = cohen_d(strcmp(categories, uniqueCategories{i}));
     bar(find(strcmp(categories, uniqueCategories{i})), categoryData, 'FaceColor', categoryColors{i});
 end
 
 hold off;
-% Setting x-axis tick labels as well as x and y labels and the title
+% (7) Setting x-axis tick labels as well as x and y labels and the title
 xticks(1:numel(cohen_d));
 xticklabels(categories);
 ylabel('Effect size');
 xlabel('Categories of Pairwise Classification');
 title('Comparison of performance of Pairwise Classifiers');
 
-% Rotating x-axis labels for better readability
+% (8) Rotating x-axis labels for better readability
 xtickangle(45);
 
-% Extracting the confidence intervals from the results structure and
+% (9) Extracting the confidence intervals from the results structure and
 % putting it in a suitable format for including an error bar
 ci_results = [results2.ci];
 ciLower = ci_results(:, [1 3 5 7 9 11 13 15 17 19 21 23 25 27 29]);
@@ -336,108 +442,4 @@ plot(seventhValueIndex, cohen_d(seventhValueIndex), 'k*', 'MarkerSize', 10);
 legend('Cohen_d 1 v 2', 'Cohen_d 1 v 3', 'Cohen_d 2 v 3', 'error');
 hold off;
 
-%% Testing for Multivariate Normality
-% Included in the end, but should've done this in the start!
-
-% Defining directories or lists of beta file paths for each condition
-condition1Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition1';
-condition2Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition2';
-condition3Dir = 'C:\Users\Medion\Downloads\Decoding_project\condition3';
-roiMaskDir = 'C:\Users\Medion\Downloads\Decoding_project\ROI_file';
-
-% Listing all NIfTI files in the directories for each condition
-condition1Files = dir(fullfile(condition1Dir, '*.nii'));
-condition2Files = dir(fullfile(condition2Dir, '*.nii'));
-condition3Files = dir(fullfile(condition3Dir, '*.nii'));
-numROIs = 5;
-
-% Initializing cell arrays to store beta values for each condition and ROI
-allBetaValuesCondition1 = cell(1, numROIs);
-allBetaValuesCondition2 = cell(1, numROIs);
-allBetaValuesCondition3 = cell(1, numROIs);
-
-% Looping through NIfTI files for Condition 1
-for fileIdx = 1:numel(condition1Files)
-    % Getging the filename
-    filename = condition1Files(fileIdx).name;
-    
-    % Checking if the filename indicates it's a beta map
-    if startsWith(filename, 'beta')
-        niftiFile = fullfile(condition1Dir, filename);
-        nifti = spm_vol(niftiFile);
-        niftiData = spm_read_vols(nifti);
-        
-        % Looping through each ROI
-        for roiIdx = 1: numROIs
-            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
-            roiMask = spm_vol(roiMaskFile);
-            roiMaskData = spm_read_vols(roiMask);
-            
-            % Extracting beta values from the ROI
-            betaValues = niftiData(roiMaskData > 0);
-            
-            % Storing the beta values in the cell array for Condition 1
-            allBetaValuesCondition1{1, roiIdx} = [allBetaValuesCondition1{1, roiIdx}; betaValues];
-        end
-    end
-end
-
-% Repeating the same process for Condition 2 and Condition 3
-for fileIdx = 1:numel(condition2Files)
-    % Getting the filename
-    filename = condition2Files(fileIdx).name;
-    
-    % Checking if the filename indicates it's a beta map
-    if startsWith(filename, 'beta')
-        niftiFile = fullfile(condition2Dir, filename);
-        nifti = spm_vol(niftiFile);
-        niftiData = spm_read_vols(nifti);
-        
-        % Looping through each ROI
-        for roiIdx = 1: numROIs
-            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
-            roiMask = spm_vol(roiMaskFile);
-            roiMaskData = spm_read_vols(roiMask);
-            
-            % Extracting beta values from the ROI
-            betaValues = niftiData(roiMaskData > 0);
-            
-            % Storing the beta values in the cell array for Condition 1
-            allBetaValuesCondition2{1, roiIdx} = [allBetaValuesCondition2{1, roiIdx}; betaValues];
-        end
-    end
-end
-
-% For condition 3
-for fileIdx = 1:numel(condition3Files)
-    % Getting the filename
-    filename = condition3Files(fileIdx).name;
-    
-    % Checking if the filename indicates it's a beta map
-    if startsWith(filename, 'beta')
-        niftiFile = fullfile(condition3Dir, filename);
-        nifti = spm_vol(niftiFile);
-        niftiData = spm_read_vols(nifti);
-        
-        % Looping through each ROI
-        for roiIdx = 1: numROIs
-            % Loading the ROI mask
-            roiMaskFile = fullfile(roiMaskDir, ['ROI', num2str(roiIdx), '.nii']);
-            roiMask = spm_vol(roiMaskFile);
-            roiMaskData = spm_read_vols(roiMask);
-            
-            % Extracting beta values from the ROI
-            betaValues = niftiData(roiMaskData > 0);
-            
-            % Storing the beta values in the cell array for Condition 1
-            allBetaValuesCondition3{1, roiIdx} = [allBetaValuesCondition3{1, roiIdx}; betaValues];
-        end
-    end
-end
-
-allBetaValues = [allBetaValuesCondition1{1,1} allBetaValuesCondition2{1,1} allBetaValuesCondition3{1,1}; allBetaValuesCondition1{1,2} allBetaValuesCondition2{1,2} allBetaValuesCondition3{1,2}; allBetaValuesCondition1{1,3} allBetaValuesCondition2{1,3} allBetaValuesCondition3{1,3};allBetaValuesCondition1{1,4} allBetaValuesCondition2{1,4} allBetaValuesCondition3{1,4}; allBetaValuesCondition1{1,5} allBetaValuesCondition2{1,5} allBetaValuesCondition3{1,5}]
-% Vertically concatenating all the ROIs with each column corresponding to
-% one of the conditions
-% Performing Henze Zirkler test
-HZmvntest(allBetaValues)
 %% The end. 
